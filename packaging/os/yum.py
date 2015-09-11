@@ -154,6 +154,9 @@ EXAMPLES = '''
 - name: upgrade all packages
   yum: name=* state=latest
 
+- name: Apply Security patches
+  yum: name=security_update state=latest
+
 - name: install the nginx rpm from a remote repo
   yum: name=http://nginx.org/packages/centos/6/noarch/RPMS/nginx-release-centos-6-0.el6.ngx.noarch.rpm state=present
 
@@ -729,11 +732,15 @@ def latest(module, items, repoq, yum_basecmd, conf_file, en_repos, dis_repos):
     pkgs['install'] = []
     updates = {}
     update_all = False
+    security_update = False
     cmd = None
 
     # determine if we're doing an update all
     if '*' in items:
         update_all = True
+
+    if 'security_update' in items:
+        security_update = True
 
     # run check-update to see if we have packages pending
     rc, out, err = module.run_command(yum_basecmd + ['check-update'])
@@ -760,6 +767,8 @@ def latest(module, items, repoq, yum_basecmd, conf_file, en_repos, dis_repos):
 
     if update_all:
         cmd = yum_basecmd + ['update']
+    elif security_update:
+        cmd = yum_basecmd + ['update --security']
     else:
         for spec in items:
             # some guess work involved with groups. update @<group> will install the group if missing
